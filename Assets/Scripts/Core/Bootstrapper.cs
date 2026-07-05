@@ -25,6 +25,12 @@ namespace CityBuilder.Core
             _hasBootstrapped = true;
             DontDestroyOnLoad(gameObject);
             StartCoroutine(InitializeRoutine());
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            GameObject testerObj = new GameObject("SystemTester");
+            testerObj.AddComponent<CityBuilder.Testing.SystemTester>();
+            DontDestroyOnLoad(testerObj);
+#endif
         }
 
         private IEnumerator InitializeRoutine()
@@ -86,6 +92,9 @@ namespace CityBuilder.Core
                 yield return null;
 
                 InitializeManager(UIManager.Instance);
+                yield return null;
+
+                InitializeManager(TestUIController.Instance);
                 yield return null;
 
                 InitializeManager(LocalizationManager.Instance);

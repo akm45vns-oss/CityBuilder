@@ -20,6 +20,15 @@ namespace CityBuilder.Managers
             _isInitialized = true;
         }
 
-        // Future implementation for async scene loading using Addressables
+        public void LoadScene(string sceneName)
+        {
+            GameLogger.Info($"[SceneManager] Loading Scene: {sceneName}");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+        }
+
+        public string GetActiveSceneName()
+        {
+            return UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        }
     }
 }
