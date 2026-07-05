@@ -64,6 +64,8 @@ namespace CityBuilder.Buildings
             return PlacementError.None;
         }
 
+        private static readonly List<RoadSegment> _nearbySegmentsCache = new List<RoadSegment>();
+
         private static void FindNearestRoad(
             List<GridCell> footprintCells,
             out RoadSegment nearestSegment,
@@ -73,18 +75,34 @@ namespace CityBuilder.Buildings
             entrancePos = Vector3.zero;
 
             var rm = ServiceLocator.Get<Managers.RoadManager>();
-            if (rm == null || rm.Network == null || rm.Network.Segments.Count == 0) return;
-
-            float bestDist = float.MaxValue;
+            if (rm == null || rm.SegmentSpatialGrid == null) return;
 
             // Use the centroid of the footprint to query nearest road
             Vector3 centroid = Vector3.zero;
-            foreach (var cell in footprintCells) centroid += cell.WorldPosition;
+            for (int i = 0; i < footprintCells.Count; i++)
+            {
+                centroid += footprintCells[i].WorldPosition;
+            }
             centroid /= footprintCells.Count;
 
-            foreach (var segment in rm.Network.Segments.Values)
+            // Query spatial hash grid within a local radius (e.g. 50 units)
+            rm.SegmentSpatialGrid.QueryRadius(centroid, 50f, _nearbySegmentsCache);
+
+            // Fallback to wider search if nothing nearby
+            if (_nearbySegmentsCache.Count == 0)
             {
-                // Find closest point on segment line
+                var nearestMidpoint = rm.SegmentSpatialGrid.QueryNearest(centroid);
+                if (nearestMidpoint != null)
+                {
+                    _nearbySegmentsCache.Add(nearestMidpoint);
+                }
+            }
+
+            float bestDist = float.MaxValue;
+
+            for (int i = 0; i < _nearbySegmentsCache.Count; i++)
+            {
+                RoadSegment segment = _nearbySegmentsCache[i];
                 Vector3 start = segment.StartNode.Position;
                 Vector3 end = segment.EndNode.Position;
                 Vector3 closest = ClosestPointOnSegment(centroid, start, end);

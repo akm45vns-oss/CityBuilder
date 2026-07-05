@@ -18,11 +18,16 @@ namespace CityBuilder.Managers
         [Header("References")]
         public RoadMeshGenerator MeshGenerator;
 
+        public CityBuilder.Utilities.SpatialHashGrid<RoadSegment> SegmentSpatialGrid { get; private set; }
+        public CityBuilder.Utilities.SpatialHashGrid<RoadNode> NodeSpatialGrid { get; private set; }
+
         public void Initialize()
         {
             if (_isInitialized) return;
 
             Network = new RoadNetwork();
+            SegmentSpatialGrid = new CityBuilder.Utilities.SpatialHashGrid<RoadSegment>(32f);
+            NodeSpatialGrid = new CityBuilder.Utilities.SpatialHashGrid<RoadNode>(32f);
             
             if (MeshGenerator == null)
             {
@@ -44,6 +49,11 @@ namespace CityBuilder.Managers
             RoadNode endNode = Network.AddNode(endPoint);
             RoadSegment segment = Network.AddSegment(startNode, endNode, settings);
 
+            // Register in Spatial Hash
+            NodeSpatialGrid.Add(startNode);
+            NodeSpatialGrid.Add(endNode);
+            SegmentSpatialGrid.Add(segment);
+
             // Calculate Grid Occupancy
             MarkGridCells(segment);
 
@@ -60,15 +70,30 @@ namespace CityBuilder.Managers
             RoadNode n1 = segment.StartNode;
             RoadNode n2 = segment.EndNode;
             
+            SegmentSpatialGrid.Remove(segment);
             Network.RemoveSegment(segment.ID);
             MeshGenerator.DestroyMesh(segment.ID);
             
-            // Rebuild adjacent intersections
-            if (Network.Nodes.ContainsKey(n1.ID)) MeshGenerator.RebuildIntersection(n1);
-            else MeshGenerator.DestroyIntersection(n1.ID);
+            // Rebuild adjacent intersections and update spatial node tags
+            if (Network.Nodes.ContainsKey(n1.ID))
+            {
+                MeshGenerator.RebuildIntersection(n1);
+            }
+            else
+            {
+                MeshGenerator.DestroyIntersection(n1.ID);
+                NodeSpatialGrid.Remove(n1);
+            }
             
-            if (Network.Nodes.ContainsKey(n2.ID)) MeshGenerator.RebuildIntersection(n2);
-            else MeshGenerator.DestroyIntersection(n2.ID);
+            if (Network.Nodes.ContainsKey(n2.ID))
+            {
+                MeshGenerator.RebuildIntersection(n2);
+            }
+            else
+            {
+                MeshGenerator.DestroyIntersection(n2.ID);
+                NodeSpatialGrid.Remove(n2);
+            }
         }
 
         private void MarkGridCells(RoadSegment segment)

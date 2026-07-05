@@ -22,9 +22,12 @@ namespace CityBuilder.Managers
         private Stack<IBuildingCommand> _undoStack = new Stack<IBuildingCommand>();
         private Stack<IBuildingCommand> _redoStack = new Stack<IBuildingCommand>();
 
+        public CityBuilder.Utilities.SpatialHashGrid<Buildings.Building> BuildingSpatialGrid { get; private set; }
+
         public void Initialize()
         {
             if (_isInitialized) return;
+            BuildingSpatialGrid = new CityBuilder.Utilities.SpatialHashGrid<Buildings.Building>(32f);
             ServiceLocator.Register<BuildingManager>(this);
             GameLogger.Info("[BuildingManager] Initialized.");
             _isInitialized = true;
@@ -34,9 +37,16 @@ namespace CityBuilder.Managers
 
         public void ExecuteCommand(IBuildingCommand command)
         {
-            command.Execute();
-            _undoStack.Push(command);
-            _redoStack.Clear(); // Branching clears redo history
+            if (command.Validate(out string reason))
+            {
+                command.Execute();
+                _undoStack.Push(command);
+                _redoStack.Clear(); // Branching clears redo history
+            }
+            else
+            {
+                GameLogger.Warning($"[BuildingManager] Command execution blocked: {reason}");
+            }
         }
 
         public void Undo()
@@ -51,10 +61,18 @@ namespace CityBuilder.Managers
         public void Redo()
         {
             if (_redoStack.Count == 0) return;
-            var cmd = _redoStack.Pop();
-            cmd.Execute();
-            _undoStack.Push(cmd);
-            GameLogger.Verbose("[BuildingManager] Redo.");
+            var cmd = _redoStack.Peek();
+            if (cmd.Validate(out string reason))
+            {
+                _redoStack.Pop();
+                cmd.Execute();
+                _undoStack.Push(cmd);
+                GameLogger.Verbose("[BuildingManager] Redo.");
+            }
+            else
+            {
+                GameLogger.Warning($"[BuildingManager] Redo blocked by validation check: {reason}");
+            }
         }
 
         // ─── Internal Placement (called by Commands only) ─────────────────────
@@ -83,6 +101,7 @@ namespace CityBuilder.Managers
             building.SetRoadConnection(connectedRoad, entrancePosition);
 
             Buildings.Add(building.ID, building);
+            BuildingSpatialGrid.Add(building);
             GameLogger.Verbose($"[BuildingManager] Placed: {definition.BuildingName}");
             return building;
         }
@@ -91,6 +110,7 @@ namespace CityBuilder.Managers
         {
             if (Buildings.TryGetValue(id, out var building))
             {
+                BuildingSpatialGrid.Remove(building);
                 building.DestroyBuilding();
                 Buildings.Remove(id);
                 GameLogger.Verbose($"[BuildingManager] Removed building {id}");

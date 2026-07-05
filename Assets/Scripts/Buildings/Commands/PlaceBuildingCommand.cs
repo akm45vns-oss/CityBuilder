@@ -37,6 +37,27 @@ namespace CityBuilder.Buildings.Commands
             _entrancePosition = entrancePosition;
         }
 
+        public bool Validate(out string reason)
+        {
+            reason = string.Empty;
+            if (_targetCells == null || _targetCells.Count == 0)
+            {
+                reason = "Target footprint cells are null or empty.";
+                return false;
+            }
+
+            for (int i = 0; i < _targetCells.Count; i++)
+            {
+                if (_targetCells[i].IsOccupied)
+                {
+                    reason = $"Cell ({_targetCells[i].X}, {_targetCells[i].Z}) is already occupied.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public void Execute()
         {
             var bm = Core.ServiceLocator.Get<Managers.BuildingManager>();

@@ -3,15 +3,18 @@ using CityBuilder.Core.Configs.Roads;
 using System.Collections.Generic;
 using CityBuilder.Grid;
 
+using CityBuilder.Utilities;
+
 namespace CityBuilder.Roads
 {
     /// <summary>
     /// Represents an edge connecting two RoadNodes.
     /// Stores the settings (speed limit, lanes) and calculated length.
     /// </summary>
-    public class RoadSegment
+    public class RoadSegment : ISpatialLocatable
     {
         public string ID { get; private set; }
+        public Vector3 Position => (StartNode.Position + EndNode.Position) / 2f;
         public RoadNode StartNode { get; private set; }
         public RoadNode EndNode { get; private set; }
         public RoadSettings Settings { get; private set; }

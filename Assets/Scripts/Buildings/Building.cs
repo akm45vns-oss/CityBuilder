@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using CityBuilder.Grid;
 using CityBuilder.Roads;
 
+using CityBuilder.Utilities;
+
 namespace CityBuilder.Buildings
 {
     public enum BuildingState
@@ -20,9 +22,10 @@ namespace CityBuilder.Buildings
     /// Runtime instance of a placed building.
     /// Stores live simulation data, state, and road connection.
     /// </summary>
-    public class Building : MonoBehaviour, ISelectable
+    public class Building : MonoBehaviour, ISelectable, ISpatialLocatable
     {
         public string ID { get; private set; }
+        public Vector3 Position => transform.position;
         public BuildingDefinition Definition { get; private set; }
         public BuildingState State { get; private set; }
 

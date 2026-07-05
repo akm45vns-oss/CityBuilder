@@ -1,13 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+using CityBuilder.Utilities;
+
 namespace CityBuilder.Roads
 {
     /// <summary>
     /// Represents an intersection, endpoint, or curve control point in the road graph.
     /// The source of truth for connectivity.
     /// </summary>
-    public class RoadNode
+    public class RoadNode : ISpatialLocatable
     {
         public string ID { get; private set; }
         public Vector3 Position { get; set; }

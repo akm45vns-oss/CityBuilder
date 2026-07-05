@@ -13,7 +13,7 @@ namespace CityBuilder.Managers
         public float TimeRemaining;
         public bool IsPaused;
 
-        public float Progress => Mathf.Clamp01(1f - TimeRemaining / TotalTime);
+        public float Progress => TotalTime <= 0f ? 1f : Mathf.Clamp01(1f - TimeRemaining / TotalTime);
     }
 
     /// <summary>
@@ -88,6 +88,22 @@ namespace CityBuilder.Managers
         public void CancelConstruction(Building building)
         {
             _activeJobs.RemoveAll(j => j.TargetBuilding == building);
+        }
+
+        public void CancelAllJobs()
+        {
+            _activeJobs.Clear();
+        }
+
+        public void RestoreJob(Building building, float totalTime, float timeRemaining, bool isPaused)
+        {
+            _activeJobs.Add(new ConstructionJob
+            {
+                TargetBuilding = building,
+                TotalTime = totalTime,
+                TimeRemaining = timeRemaining,
+                IsPaused = isPaused
+            });
         }
 
         public ConstructionJob GetJob(Building building)

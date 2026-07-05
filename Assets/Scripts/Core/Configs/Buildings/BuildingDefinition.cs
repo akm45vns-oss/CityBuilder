@@ -97,6 +97,8 @@ namespace CityBuilder.Core.Configs.Buildings
         [Header("Unlock Conditions")]
         public UnlockRequirement UnlockRequirement;
 
+        private List<Vector2Int> _cachedRectFootprint;
+
         /// <summary>
         /// Returns the footprint as a list of cell offsets from the origin.
         /// Falls back to rectangular Size if no custom footprint is defined.
@@ -106,11 +108,13 @@ namespace CityBuilder.Core.Configs.Buildings
             if (CustomFootprint != null && CustomFootprint.Count > 0)
                 return CustomFootprint;
 
-            List<Vector2Int> rect = new List<Vector2Int>();
+            if (_cachedRectFootprint != null) return _cachedRectFootprint;
+
+            _cachedRectFootprint = new List<Vector2Int>();
             for (int x = 0; x < Size.x; x++)
                 for (int z = 0; z < Size.y; z++)
-                    rect.Add(new Vector2Int(x, z));
-            return rect;
+                    _cachedRectFootprint.Add(new Vector2Int(x, z));
+            return _cachedRectFootprint;
         }
     }
 }

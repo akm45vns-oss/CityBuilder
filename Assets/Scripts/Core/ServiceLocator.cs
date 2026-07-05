@@ -1,15 +1,16 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
+using System.Collections.Concurrent;
+using CityBuilder.Core.Logging;
 
 namespace CityBuilder.Core
 {
     /// <summary>
-    /// Global registry for services, preventing tight coupling between managers.
+    /// Thread-safe global registry for services, preventing tight coupling between managers.
+    /// Uses ConcurrentDictionary to ensure safe concurrent operations from worker threads.
     /// </summary>
     public static class ServiceLocator
     {
-        private static readonly Dictionary<Type, IService> _services = new Dictionary<Type, IService>();
+        private static readonly ConcurrentDictionary<Type, IService> _services = new ConcurrentDictionary<Type, IService>();
 
         /// <summary>
         /// Registers a service to the locator.
@@ -17,14 +18,13 @@ namespace CityBuilder.Core
         public static void Register<T>(T service) where T : IService
         {
             var type = typeof(T);
-            if (!_services.ContainsKey(type))
+            if (_services.TryAdd(type, service))
             {
-                _services.Add(type, service);
-                Debug.Log($"[ServiceLocator] Registered {type.Name}");
+                GameLogger.Info($"[ServiceLocator] Registered {type.Name}");
             }
             else
             {
-                Debug.LogError($"[ServiceLocator] Service {type.Name} is already registered!");
+                GameLogger.Error($"[ServiceLocator] Service {type.Name} is already registered!");
             }
         }
 
@@ -39,7 +39,7 @@ namespace CityBuilder.Core
                 return (T)service;
             }
 
-            Debug.LogError($"[ServiceLocator] Service {type.Name} not found!");
+            GameLogger.Error($"[ServiceLocator] Service {type.Name} not found!");
             return default;
         }
 
@@ -49,10 +49,9 @@ namespace CityBuilder.Core
         public static void Unregister<T>() where T : IService
         {
             var type = typeof(T);
-            if (_services.ContainsKey(type))
+            if (_services.TryRemove(type, out _))
             {
-                _services.Remove(type);
-                Debug.Log($"[ServiceLocator] Unregistered {type.Name}");
+                GameLogger.Info($"[ServiceLocator] Unregistered {type.Name}");
             }
         }
         

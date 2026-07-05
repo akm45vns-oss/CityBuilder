@@ -48,6 +48,7 @@ namespace CityBuilder.Managers
             if (definition.ConstructionPrefab != null)
             {
                 _ghostInstance = Instantiate(definition.ConstructionPrefab);
+                _ghostRenderers = _ghostInstance.GetComponentsInChildren<Renderer>();
             }
         }
 
@@ -57,6 +58,7 @@ namespace CityBuilder.Managers
             _activeDefinition = null;
             _previewCells = null;
             _isValid = false;
+            _ghostRenderers = null;
         }
 
         private void Update()
@@ -116,15 +118,20 @@ namespace CityBuilder.Managers
             }
         }
 
+        private Renderer[] _ghostRenderers;
+
         private void TintGhost(bool valid)
         {
-            if (_ghostInstance == null) return;
+            if (_ghostRenderers == null) return;
             Material mat = valid ? ValidGhostMaterial : InvalidGhostMaterial;
             if (mat == null) return;
 
-            foreach (var renderer in _ghostInstance.GetComponentsInChildren<Renderer>())
+            for (int i = 0; i < _ghostRenderers.Length; i++)
             {
-                renderer.sharedMaterial = mat;
+                if (_ghostRenderers[i] != null)
+                {
+                    _ghostRenderers[i].sharedMaterial = mat;
+                }
             }
         }
     }
